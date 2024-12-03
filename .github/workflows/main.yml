@@ -1,0 +1,67 @@
+name: Deploy Terraform
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: "AWS Region"
+        required: true
+        default: "us-east-1"
+      vpc_cidr:
+        description: "VPC CIDR Block"
+        required: true
+        default: "10.0.0.0/16"
+      subnet_cidr:
+        description: "Subnet CIDR Block"
+        required: true
+        default: "10.0.1.0/24"
+      ami_id:
+        description: "AMI ID"
+        required: true
+        default: "ami-0866a3c8686eaeeba"
+      instance_type:
+        description: "Instance Type"
+        required: true
+        default: "t2.micro"
+      asg_min_size:
+        description: "Auto Scaling Group Minimum Size"
+        required: true
+        default: "1"
+      asg_max_size:
+        description: "Auto Scaling Group Maximum Size"
+        required: true
+        default: "2"
+      asg_desired_capacity:
+        description: "Auto Scaling Group Desired Capacity"
+        required: true
+        default: "1"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Initialize Terraform
+        run: terraform init
+
+      - name: Apply Terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          terraform apply -auto-approve \
+            -var="aws_region=${{ github.event.inputs.aws_region }}" \
+            -var="vpc_cidr=${{ github.event.inputs.vpc_cidr }}" \
+            -var="subnet_cidr=${{ github.event.inputs.subnet_cidr }}" \
+            -var="ami_id=${{ github.event.inputs.ami_id }}" \
+            -var="instance_type=${{ github.event.inputs.instance_type }}" \
+            -var="asg_min_size=${{ github.event.inputs.asg_min_size }}" \
+            -var="asg_max_size=${{ github.event.inputs.asg_max_size }}" \
+            -var="asg_desired_capacity=${{ github.event.inputs.asg_desired_capacity }}"
